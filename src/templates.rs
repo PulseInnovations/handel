@@ -140,6 +140,8 @@ pub struct ComposeServiceFragment {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub environment: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub ulimits: Option<HashMap<String, serde_yaml::Value>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ports: Option<Vec<PortMapping>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub deploy: Option<DeployOptions>,
@@ -515,6 +517,13 @@ ports:
         let t = r#"
 image: foo
 platform: amd64
+ulimits:
+  memlock:
+    soft: -1
+    hard: -1
+  nofile:
+    soft: 65536
+    hard: 65536
 ports:
     - 121:343
     - 212
@@ -523,6 +532,8 @@ ports:
 
         assert_eq!("foo", frag.image);
         assert!(frag.platform.is_some());
+        assert!(frag.ulimits.is_some());
+        assert_eq!(2, frag.ulimits.unwrap().len());
         assert_eq!("amd64", frag.platform.unwrap());
     }
 }
