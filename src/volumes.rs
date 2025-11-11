@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use http::Uri;
 
 use aws_config::meta::region::RegionProviderChain;
-use s3::Client;
 use s3::config::Region;
+use s3::Client;
 
 use snafu::{ResultExt, Snafu};
 
@@ -65,7 +65,7 @@ pub enum Error {
 
     #[snafu(display("Error occurred streaming object from S3\n{}", source))]
     S3GetBytes {
-        source: s3::primitives::ByteStreamError
+        source: s3::primitives::ByteStreamError,
     },
 }
 
@@ -88,8 +88,8 @@ pub struct Volumes {}
 
 impl Volumes {
     pub async fn initialise(volumes: &Option<Vec<VolumeInitializer>>) -> Result<()> {
-
-        let vols = volumes.as_ref()
+        let vols = volumes
+            .as_ref()
             .unwrap_or(&Vec::new())
             .iter()
             .filter_map(|v| {
@@ -221,13 +221,11 @@ fn parse_uri_as_bucket_and_key(path: &str) -> Result<S3Location> {
 }
 
 async fn unzip_file_from_s3(volume: &VolumeInitializer) -> Result<()> {
-
-    let region_provider = RegionProviderChain::default_provider()
-        .or_else(Region::new("us-east-1"));
+    let region_provider = RegionProviderChain::default_provider().or_else(Region::new("us-east-1"));
     let shared_config = aws_config::defaults(aws_config::BehaviorVersion::latest())
-                                                 .region(region_provider)
-                                                 .load()
-                                                 .await;
+        .region(region_provider)
+        .load()
+        .await;
     let client = Client::new(&shared_config);
 
     let s3loc = parse_uri_as_bucket_and_key(&volume.source)?;
@@ -301,7 +299,8 @@ async fn unzip_file_from_s3(volume: &VolumeInitializer) -> Result<()> {
     })?;
 
     info!(
-        "\n{} - Extracted zip file of {:?} bytes from {} to {}", module_path!(),
+        "\n{} - Extracted zip file of {:?} bytes from {} to {}",
+        module_path!(),
         bytes_downloaded,
         &volume.source,
         &volume.target

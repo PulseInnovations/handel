@@ -69,8 +69,7 @@ pub struct ContainerImage {
 }
 
 #[derive(Debug, Clone)]
-pub struct ContainerImages {
-}
+pub struct ContainerImages {}
 
 #[allow(dead_code)]
 impl ContainerImage {
@@ -121,9 +120,7 @@ impl ContainerImages {
         String::from_utf8(output.stdout)
             .context(ParseChildOutput)?
             .lines()
-            .filter_map(|line| {
-                serde_json::from_str::<LocalContainerImage>(line).ok()
-            })
+            .filter_map(|line| serde_json::from_str::<LocalContainerImage>(line).ok())
             .filter(|lc| {
                 debug!("id: {} tag: {} size: {}", &lc.id, &lc.tag, &lc.size);
                 !matches!(lc.tag.as_str(), "TRUNK")
@@ -231,7 +228,7 @@ mod docker_image_datetime_format {
         // Convert the local date timestamps to UTC.
         DateTime::parse_from_str(&s, FORMAT)
             .map_err(serde::de::Error::custom)
-            .map(|d| d.with_timezone(&Utc) )
+            .map(|d| d.with_timezone(&Utc))
     }
 }
 
@@ -295,7 +292,7 @@ mod tests {
 
     #[test]
     fn test_time_deserializer() {
-        let expected: DateTime<Utc> = Utc.with_ymd_and_hms(2020, 2, 27, 07, 35, 09).unwrap();
+        let expected: DateTime<Utc> = Utc.with_ymd_and_hms(2020, 2, 27, 7, 35, 9).unwrap();
         let test_data = r#"{"CreatedAt":"2020-02-27 07:35:09 +0000 UTC"}"#;
         let de: TestTime = serde_yaml::from_str(test_data).unwrap();
 

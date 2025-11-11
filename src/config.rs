@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::mem::swap;
 use std::path::Path;
 
-use serde::{Deserialize, Deserializer};
 use regex::Regex;
+use serde::{Deserialize, Deserializer};
 
 use crate::reference::Reference;
 use crate::templates::{ComposeService, ComposeServiceMap};
@@ -99,7 +99,7 @@ pub struct HandelConfig {
 
     #[serde(default)]
     #[serde(deserialize_with = "de_port_range")]
-    port_range: Option<(u16,u16)>,
+    port_range: Option<(u16, u16)>,
 
     reference: Option<Reference>,
 
@@ -117,23 +117,28 @@ where
     Ok(v)
 }
 
-fn de_port_range<'de, D>(deserializer: D) -> Result<Option<(u16,u16)>, D::Error>
-    where
-        D: Deserializer<'de>,
+fn de_port_range<'de, D>(deserializer: D) -> Result<Option<(u16, u16)>, D::Error>
+where
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    let re = Regex::new(r"(?P<p1>[1-9]\d{0,4})-(?P<p2>[1-9]\d{0,4})")
-        .expect("Regex not valid");
+    let re = Regex::new(r"(?P<p1>[1-9]\d{0,4})-(?P<p2>[1-9]\d{0,4})").expect("Regex not valid");
 
     let ports = match re.captures(&s) {
         Some(c) => {
-            let mut p1 = c.name("p1").map(|m| m.as_str().parse::<u16>().unwrap()).unwrap();
-            let mut p2 = c.name("p2").map(|m| m.as_str().parse::<u16>().unwrap()).unwrap();
+            let mut p1 = c
+                .name("p1")
+                .map(|m| m.as_str().parse::<u16>().unwrap())
+                .unwrap();
+            let mut p2 = c
+                .name("p2")
+                .map(|m| m.as_str().parse::<u16>().unwrap())
+                .unwrap();
             if p1 > p2 {
-                swap(&mut p1,&mut p2)
+                swap(&mut p1, &mut p2)
             }
-            Some((p1,p2))
-        },
+            Some((p1, p2))
+        }
         _ => None,
     };
 
@@ -164,7 +169,7 @@ impl HandelConfig {
         &self.reference
     }
 
-    pub fn get_port_range(self: &HandelConfig) -> Option<(u16,u16)> {
+    pub fn get_port_range(self: &HandelConfig) -> Option<(u16, u16)> {
         self.port_range
     }
 
@@ -258,7 +263,6 @@ impl HandelConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn test_config_port_range_ok() {
@@ -270,7 +274,7 @@ scenarios:
     - b
 "#;
         let frag: HandelConfig = serde_yaml::from_str(t).unwrap();
-        assert_eq!(frag.port_range.unwrap(),(1234,5678));
+        assert_eq!(frag.port_range.unwrap(), (1234, 5678));
     }
 
     #[test]

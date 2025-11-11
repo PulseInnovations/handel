@@ -35,7 +35,9 @@ pub enum Error {
     },
 
     #[snafu(display(r#"Problem occurred trying to load service fragments.\n{}"#, source))]
-    Fragments { source: crate::templates::TemplateError },
+    Fragments {
+        source: crate::templates::TemplateError,
+    },
 
     #[snafu(display(
         r#"Problem occurred trying to build required services list.\n{}"#,
@@ -65,9 +67,7 @@ type Result<T, E = Error> = std::result::Result<T, E>;
 #[tokio::main]
 async fn main() -> Result<()> {
     let yaml = load_yaml!("./cli.yml");
-    let matches = App::from_yaml(yaml)
-        .version(crate_version!())
-        .get_matches();
+    let matches = App::from_yaml(yaml).version(crate_version!()).get_matches();
     let config_file = matches
         .value_of("config")
         .expect("The input file is required - should default to handel.yml");
@@ -100,7 +100,7 @@ async fn main() -> Result<()> {
     let (versions, images, fragment_map, volumes) = tokio::join!(
         RunningServices::load(env, config.get_reference()),
         ContainerImages::find(since),
-        ComposeServiceMap::new(config.template_dir(),config.get_port_range()),
+        ComposeServiceMap::new(config.template_dir(), config.get_port_range()),
         Volumes::initialise(config.volumes())
     );
 
@@ -130,9 +130,7 @@ async fn main() -> Result<()> {
     });
 
     let images = images.unwrap_or_else(|e| {
-        warn!(
-            "\nWarning: Unable to read local container images from docker.\n{e:?}"
-        );
+        warn!("\nWarning: Unable to read local container images from docker.\n{e:?}");
         Vec::new()
     });
 
@@ -146,8 +144,9 @@ async fn main() -> Result<()> {
     }
 
     let contents =
-        DockerCompose::generate(&required_services, &running_svcs, &images)
-            .context(Generate { scenario: scenario.to_string(), })?;
+        DockerCompose::generate(&required_services, &running_svcs, &images).context(Generate {
+            scenario: scenario.to_string(),
+        })?;
 
     let path = std::path::Path::new("docker-compose.yml");
 

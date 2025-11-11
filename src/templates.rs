@@ -1,11 +1,11 @@
-use std::collections::{HashMap, HashSet};
-use std::cmp::Ordering;
-use std::ops::RangeInclusive;
 use log::*;
 use regex::Regex;
+use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde::de::{Error};
 use snafu::{ResultExt, Snafu};
+use std::cmp::Ordering;
+use std::collections::{HashMap, HashSet};
+use std::ops::RangeInclusive;
 
 #[derive(Debug, Snafu)]
 pub enum TemplateError {
@@ -49,9 +49,7 @@ pub enum TemplateError {
     },
 
     #[snafu(display(r#"Unable to parse port mapping: {}"#, input))]
-    PortMappingFormat {
-        input: String,
-    },
+    PortMappingFormat { input: String },
 }
 
 type Result<T, E = TemplateError> = std::result::Result<T, E>;
@@ -66,7 +64,7 @@ pub struct ImageVersion {
 #[derive(Debug, Clone)]
 pub struct PortMapping {
     source: Option<u16>,
-    target: u16
+    target: u16,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -79,8 +77,8 @@ pub struct DeployOptions {
 
 impl<'de> Deserialize<'de> for PortMapping {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
 
@@ -88,14 +86,15 @@ impl<'de> Deserialize<'de> for PortMapping {
             .map(|r| r.captures(&s))
             .expect("Internal error: invalid regular expression");
 
-        let captures = captures
-            .ok_or_else(|| D::Error::custom("Port mapping unexpected"))?;
+        let captures = captures.ok_or_else(|| D::Error::custom("Port mapping unexpected"))?;
 
-        let port_a = captures.name("a")
+        let port_a = captures
+            .name("a")
             .map(|m| m.as_str().parse::<u16>().unwrap_or(0))
             .ok_or_else(|| D::Error::custom("No port "))?;
 
-        let port_b = captures.name("b")
+        let port_b = captures
+            .name("b")
             .map(|m| Some(m.as_str().parse::<u16>().unwrap_or(0)))
             .unwrap_or(None);
 
@@ -115,7 +114,8 @@ impl<'de> Deserialize<'de> for PortMapping {
 
 impl Serialize for PortMapping {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer,
+    where
+        S: Serializer,
     {
         let s = if let Some(source_port) = self.source {
             format!("{}:{}", source_port, self.target)
@@ -192,13 +192,12 @@ impl ComposeServiceFragment {
 }
 
 impl ComposeService {
-
     #[cfg(test)]
     pub fn new(name: &str, image: &str, frag: &ComposeServiceFragment) -> ComposeService {
         ComposeService {
             name: name.to_string(),
             image: image.to_string(),
-            fragment: frag.clone()
+            fragment: frag.clone(),
         }
     }
 
@@ -257,10 +256,12 @@ impl ComposeService {
 }
 
 impl ComposeServiceMap {
-    pub async fn new(templates_dir: &str, port_range: Option<(u16,u16)>) -> Result<ComposeServiceMap> {
-
+    pub async fn new(
+        templates_dir: &str,
+        port_range: Option<(u16, u16)>,
+    ) -> Result<ComposeServiceMap> {
         let mut templates = HashMap::new();
-        let mut target_ports: HashMap<u16,Vec<String>> = HashMap::new();
+        let mut target_ports: HashMap<u16, Vec<String>> = HashMap::new();
         let mut assigned_ports = HashSet::<u16>::new();
 
         let entries = std::fs::read_dir(templates_dir).context(TemplateDirectoryNotReadable {
@@ -323,43 +324,47 @@ impl ComposeServiceMap {
             };
 
             if let Some(p) = service.fragment.ports.as_ref() {
-                p.iter()
-                    .for_each(|pm| {
-                        if let Some(pm_source) = pm.source {
-                            assigned_ports.insert(pm_source);
-                            target_ports.entry(pm_source)
-                                .or_default()
-                                .push(service.name.clone());
-                        }
-                    });
+                p.iter().for_each(|pm| {
+                    if let Some(pm_source) = pm.source {
+                        assigned_ports.insert(pm_source);
+                        target_ports
+                            .entry(pm_source)
+                            .or_default()
+                            .push(service.name.clone());
+                    }
+                });
             };
 
             templates.insert(stem.to_string(), service);
         }
 
-        if target_ports.values().any(|s|s.len()>1) {
-            let conflicting_ports = target_ports.iter()
-                .filter(|(_,v)|v.len()>1)
-                .map(|(k,v)|{
+        if target_ports.values().any(|s| s.len() > 1) {
+            let conflicting_ports = target_ports
+                .iter()
+                .filter(|(_, v)| v.len() > 1)
+                .map(|(k, v)| {
                     let conflicts = v.join(", ");
                     format!("\t{k}\t{conflicts}")
                 })
                 .collect::<Vec<_>>();
 
-            eprintln!("Warning: The following host port conflicts exist:\n\tPort\tConflicting\n{}\n",
-                      conflicting_ports.join("\n") );
+            eprintln!(
+                "Warning: The following host port conflicts exist:\n\tPort\tConflicting\n{}\n",
+                conflicting_ports.join("\n")
+            );
 
             if let Some(r) = port_range {
                 let free_ports = RangeInclusive::<u16>::new(r.0, r.1)
-                    .filter(|p| !assigned_ports.contains(p) )
+                    .filter(|p| !assigned_ports.contains(p))
                     .take(conflicting_ports.len())
-                    .map(|p|format!("\t{p}"))
+                    .map(|p| format!("\t{p}"))
                     .collect::<Vec<_>>();
 
-                eprintln!("The following host ports are free in the port-range:\n{}\n",
-                          free_ports.join("\n") );
+                eprintln!(
+                    "The following host ports are free in the port-range:\n{}\n",
+                    free_ports.join("\n")
+                );
             }
-
         }
 
         Ok(ComposeServiceMap { templates })
@@ -380,12 +385,11 @@ impl ImageVersion {
 
         let result = match re.captures(image_str) {
             Some(c) => {
-                let name =
-                    c.name("svc")
-                        .map(|m| m.as_str().to_string())
-                        .ok_or(TemplateError::ServiceName {
-                            input: image_str.to_string(),
-                        })?;
+                let name = c.name("svc").map(|m| m.as_str().to_string()).ok_or(
+                    TemplateError::ServiceName {
+                        input: image_str.to_string(),
+                    },
+                )?;
 
                 Ok(ImageVersion {
                     name,
@@ -431,18 +435,19 @@ impl ImageVersion {
         self.name.clone()
     }
 
-    pub fn get_version(&self) -> Option<String> { self.version.clone() }
+    pub fn get_version(&self) -> Option<String> {
+        self.version.clone()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn test1() {
-        let i = ImageVersion::new("12121212121.dkr.ecr.us-east-1.amazonaws.com/api:1.0.423")
-            .unwrap();
+        let i =
+            ImageVersion::new("12121212121.dkr.ecr.us-east-1.amazonaws.com/api:1.0.423").unwrap();
         assert_eq!("api", i.name);
         assert_eq!(
             "12121212121.dkr.ecr.us-east-1.amazonaws.com",

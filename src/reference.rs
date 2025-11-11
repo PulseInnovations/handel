@@ -51,10 +51,7 @@ pub struct RunningService {
     version: String,
 }
 
-
-
-pub struct RunningServices {
-}
+pub struct RunningServices {}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -65,12 +62,11 @@ pub struct Reference {
 }
 
 impl RunningService {
-
     #[cfg(test)]
     pub fn new(name: &str, version: &str) -> Self {
         RunningService {
             name: name.to_string(),
-            version: version.to_string()
+            version: version.to_string(),
         }
     }
 
@@ -84,7 +80,6 @@ impl RunningService {
 }
 
 impl RunningServices {
-
     pub async fn load(env: &str, reference: &Option<Reference>) -> Result<Vec<RunningService>> {
         if reference.is_none() {
             return Ok(Vec::new());
