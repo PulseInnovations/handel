@@ -1,21 +1,68 @@
 name: Rust
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build-linux:
+  # Quick checks for PRs
+  test:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: Install latest rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
         with:
-          toolchain: stable
-          default: true
-          override: true
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check formatting
+        run: cargo fmt -- --check
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Build
+        run: cargo build --all
+
+      - name: Run tests
+        run: cargo test --all
+
+  build-linux:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install latest rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Build
         run: cargo build --all --release && strip target/release/handel && mv target/release/handel target/release/handel_linux_x86_64
@@ -31,17 +78,14 @@ jobs:
 
   build-win:
     runs-on: windows-latest
+    if: github.event_name == 'push'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: Install latest rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          default: true
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Build
         run: cargo build --all --release
@@ -57,24 +101,16 @@ jobs:
 
   build-mac:
     runs-on: macos-latest
+    if: github.event_name == 'push'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: Install latest rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: x86_64-apple-darwin
-          default: true
-          override: true
-
-      - name: Add aarch64-apple-darwin target
-        run: rustup target add aarch64-apple-darwin
-
-      - name: Add x86_64-apple-darwin target
-        run: rustup target add x86_64-apple-darwin
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
 
       - name: Build for mac
         run: cargo build --all --target aarch64-apple-darwin --release && strip target/aarch64-apple-darwin/release/handel && cargo build --all --target x86_64-apple-darwin --release && strip target/x86_64-apple-darwin/release/handel && lipo -create target/aarch64-apple-darwin/release/handel target/x86_64-apple-darwin/release/handel -output target/handel_darwin_universal
