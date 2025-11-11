@@ -328,7 +328,7 @@ impl ComposeServiceMap {
                         if let Some(pm_source) = pm.source {
                             assigned_ports.insert(pm_source);
                             target_ports.entry(pm_source)
-                                .or_insert_with(Vec::new)
+                                .or_default()
                                 .push(service.name.clone());
                         }
                     });
@@ -337,12 +337,12 @@ impl ComposeServiceMap {
             templates.insert(stem.to_string(), service);
         }
 
-        if let true = target_ports.values().any(|s|s.len()>1) {
+        if target_ports.values().any(|s|s.len()>1) {
             let conflicting_ports = target_ports.iter()
                 .filter(|(_,v)|v.len()>1)
                 .map(|(k,v)|{
                     let conflicts = v.join(", ");
-                    format!("\t{}\t{}", k, conflicts)
+                    format!("\t{k}\t{conflicts}")
                 })
                 .collect::<Vec<_>>();
 
@@ -353,7 +353,7 @@ impl ComposeServiceMap {
                 let free_ports = RangeInclusive::<u16>::new(r.0, r.1)
                     .filter(|p| !assigned_ports.contains(p) )
                     .take(conflicting_ports.len())
-                    .map(|p|format!("\t{}", p))
+                    .map(|p|format!("\t{p}"))
                     .collect::<Vec<_>>();
 
                 eprintln!("The following host ports are free in the port-range:\n{}\n",
@@ -437,7 +437,7 @@ impl ImageVersion {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_yaml;
+    
 
     #[test]
     fn test1() {
@@ -506,8 +506,8 @@ ports:
         assert!(frag.ports.is_some());
         let ports = frag.ports.unwrap();
         assert_eq!(ports.len(), 2);
-        assert_eq!(Some(121), ports.get(0).unwrap().source);
-        assert_eq!(343, ports.get(0).unwrap().target);
+        assert_eq!(Some(121), ports.first().unwrap().source);
+        assert_eq!(343, ports.first().unwrap().target);
         assert_eq!(Some(212), ports.get(1).unwrap().source);
         assert_eq!(434, ports.get(1).unwrap().target);
     }

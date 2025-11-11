@@ -7,6 +7,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
 #[derive(Debug, Snafu)]
+#[allow(dead_code)]
 pub enum Error {
     #[snafu(display(r#"Unable to create HTTP client.\n{}"#, source))]
     HttpClient { source: reqwest::Error },
@@ -35,7 +36,7 @@ pub enum Error {
     #[snafu(display(r#"Unable to get input for jq command\n{}"#, source))]
     JqStdinHandle { source: std::io::Error },
 
-    #[snafu(display(r#"Unable to get input for jq command\n{}"#, source))]
+    #[snafu(display(r#"Unable to get output for jq command\n{}"#, source))]
     JqStdoutHandle { source: std::io::Error },
 
     #[snafu(display(r#"Unable to read jq output as utf8\n{}"#, source))]
@@ -145,8 +146,8 @@ impl RunningServices {
 }
 
 async fn apply_filter(filter: &str, input: &str) -> Result<String> {
-    debug!("jq - Input: {}", input);
-    debug!("jq - Filter: {}", filter);
+    debug!("jq - Input: {input}");
+    debug!("jq - Filter: {filter}");
 
     let mut jq = Command::new("jq")
         .arg(filter)

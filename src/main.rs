@@ -105,7 +105,7 @@ async fn main() -> Result<()> {
     );
 
     volumes.unwrap_or_else(|e| {
-        error!("Unable to initialise volumes.\n{:?}", e);
+        error!("Unable to initialise volumes.\n{e:?}");
         std::process::exit(1);
     });
 
@@ -131,8 +131,7 @@ async fn main() -> Result<()> {
 
     let images = images.unwrap_or_else(|e| {
         warn!(
-            "\nWarning: Unable to read local container images from docker.\n{:?}",
-            e
+            "\nWarning: Unable to read local container images from docker.\n{e:?}"
         );
         Vec::new()
     });

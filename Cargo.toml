@@ -10,13 +10,13 @@ lto = true
 codegen-units = 1
 
 [dependencies]
-tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread", "process"] }
-tokio-rustls = "0.25.0"
-aws-config =  { version = "1.1.5", default-features = false, features = ["rustls", "rt-tokio", "sso"] }
-s3 = { package="aws-sdk-s3", version = "1.1.5", default-features = false, features = ["rustls", "rt-tokio"] }
+tokio = { version = "1.42", default-features = false, features = ["macros", "rt-multi-thread", "process"] }
+tokio-rustls = "0.26"
+aws-config =  { version = "1.5", default-features = false, features = ["rustls", "rt-tokio", "sso"] }
+s3 = { package="aws-sdk-s3", version = "1.68", default-features = false, features = ["rustls", "rt-tokio"] }
 yaml-rust = "0.4"
 clap = {version = "2.34.0", features = ["yaml"]}
-reqwest = { version = "0.11.24", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 log = "0.4.14"
 unzip = "0.1.0"
 serde = { version = "1", features = ["derive"] }

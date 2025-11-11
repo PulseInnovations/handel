@@ -12,6 +12,7 @@ use s3::config::Region;
 use snafu::{ResultExt, Snafu};
 
 #[derive(Debug, Snafu)]
+#[allow(dead_code)]
 pub enum Error {
     #[snafu(display(
         r#"Unable to parse s3 source: {} as a valid URI.\n{}"#,
@@ -194,7 +195,7 @@ fn target_dir_valid(dir: &str) -> bool {
 }
 
 fn dir_is_empty(path: &Path) -> bool {
-    path.read_dir().map_or(false, |mut i| i.next().is_none())
+    path.read_dir().is_ok_and(|mut i| i.next().is_none())
 }
 
 fn extract_bucket_and_key(uri: &Uri) -> Result<S3Location> {

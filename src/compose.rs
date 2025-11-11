@@ -106,7 +106,7 @@ impl DockerCompose {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_yaml;
+    
 
     #[test]
     fn test_can_use_image_name() {

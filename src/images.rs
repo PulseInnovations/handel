@@ -11,6 +11,7 @@ use std::str::FromStr;
 use snafu::{ResultExt, Snafu};
 
 #[derive(Debug, Snafu)]
+#[allow(dead_code)]
 pub enum Error {
     #[snafu(display(r#"Unable spawn docker command.\n{}"#, source))]
     SpawnDockerCommand { source: std::io::Error },
