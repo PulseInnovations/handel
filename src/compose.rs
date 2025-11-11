@@ -25,7 +25,6 @@ impl DockerCompose {
         running: &[RunningService],
         local: &[ContainerImage],
     ) -> Result<String> {
-
         let mut svc_versions = Vec::<String>::new();
 
         let running_svc_lookup =
@@ -44,16 +43,19 @@ impl DockerCompose {
                     acc
                 });
 
-        let versioned = svcs.iter()
-            .fold(HashMap::<String,ComposeServiceFragment>::new(), |mut acc, s|{
-
+        let versioned = svcs.iter().fold(
+            HashMap::<String, ComposeServiceFragment>::new(),
+            |mut acc, s| {
                 let repo = s.image();
                 let service_name = s.name();
                 let image_version = s.fragment().get_version();
 
                 if image_version.is_none() {
-                    eprintln!("Warning - cannot extract image information from template for \
-                    service: {:?}", &service_name);
+                    eprintln!(
+                        "Warning - cannot extract image information from template for \
+                    service: {:?}",
+                        &service_name
+                    );
                     return acc;
                 }
 
@@ -61,17 +63,18 @@ impl DockerCompose {
 
                 let image_name = image_version.get_name();
 
-                let version = container_lookup.get(&repo).map(|i|i.version())
-                    .or_else(||running_svc_lookup.get(&service_name).map(|r|r.version()))
-                    .or_else(||running_svc_lookup.get(&image_name).map(|r|r.version()))
-                    .or_else(||image_version.get_version());
+                let version = container_lookup
+                    .get(&repo)
+                    .map(|i| i.version())
+                    .or_else(|| running_svc_lookup.get(&service_name).map(|r| r.version()))
+                    .or_else(|| running_svc_lookup.get(&image_name).map(|r| r.version()))
+                    .or_else(|| image_version.get_version());
 
-                let image_parts : Vec<&str> = repo.splitn(2, '/' ).collect();
+                let image_parts: Vec<&str> = repo.splitn(2, '/').collect();
                 let plain_repo = match image_parts.len() {
                     2 => image_parts.get(1).unwrap(),
-                    _ => repo.as_str()
+                    _ => repo.as_str(),
                 };
-
 
                 let svc_name = if let Some(v) = &version {
                     format!("{} -> {}:{}", &service_name, &plain_repo, &v.clone())
@@ -86,7 +89,8 @@ impl DockerCompose {
                 acc.insert(service_name, fragment);
 
                 acc
-            });
+            },
+        );
 
         println!(
             "\nGenerating docker compose file based on {} services:\n\t{}",
@@ -106,7 +110,6 @@ impl DockerCompose {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn test_can_use_image_name() {
@@ -115,8 +118,11 @@ image: 12121212121.dkr.ecr.us-east-1.amazonaws.com/contentrepo:1.0.400
 "#;
         let frag: ComposeServiceFragment = serde_yaml::from_str(t).unwrap();
 
-        let svcs = [&ComposeService::new("content-repo",
-         "12121212121.dkr.ecr.us-east-1.amazonaws.com/contentrepo:1.0.423", &frag)];
+        let svcs = [&ComposeService::new(
+            "content-repo",
+            "12121212121.dkr.ecr.us-east-1.amazonaws.com/contentrepo:1.0.423",
+            &frag,
+        )];
 
         let running = [RunningService::new("contentrepo", "1.0.425")];
         let local = [];
